@@ -40,9 +40,13 @@
 (defalias 'gnus-gravatar-insert-glyph 'gnus-picon-insert-glyph)
 (defalias 'gnus-gravatar-create-glyph 'gnus-picon-create-glyph)
 
+(defvar gravatar-active-p t
+  "Fetch gravatar icon from network")
+
 (defvar gnus-treat-gravatar-icon
   (if (and (gnus-image-type-available-p 'png)
-	   (gnus-image-type-available-p 'jpeg))
+	   (gnus-image-type-available-p 'jpeg)
+	   (gnus-image-type-available-p 'gif))
       'head nil))
 
 (add-to-list 'gnus-treatment-function-alist
@@ -73,17 +77,22 @@ added right to the textual representation."
   "Display icon size"
   :group 'gravatar)
 
+(defcustom gravatar-unknown-icon "unknown-45x45.jpg"
+  "Display icon when pixmap is unrecognized"
+  :group 'gravatar)
+
 (defun gnus-gravatar-split-address (address)
   (car (mail-header-parse-address address)))
 
 (defun gravatar-retrieve (path url)
-  (let ((spath (expand-file-name gnus-gravatar-directory)))
-    (if (not (file-exists-p spath))
-	(make-directory spath t))
-    (shell-command-to-string
-     (format gravatar-retrieval-program
-	     (expand-file-name path)
-	     url))))
+  (if gravatar-active-p
+      (let ((spath (expand-file-name gnus-gravatar-directory)))
+	(if (not (file-exists-p spath))
+	    (make-directory spath t))
+	(shell-command-to-string
+	 (format gravatar-retrieval-program
+		 (expand-file-name path)
+		 url)))))
 
 (defun gravatar-make-query-size (size)
   (format "s=%s" (int-to-string size)))
@@ -95,10 +104,7 @@ added right to the textual representation."
 (defun gravatar-make-query (opts)
   (if (eq opts nil)
       ""
-    (concat "?"
-	    (mapconcat (lambda (x) x)
-		       opts
-		       "&"))))
+    (concat "?" (mapconcat (lambda (x) x) opts "&"))))
 
 (defun gravatar-make-store-filename (user &rest opts)
   (concat
@@ -106,10 +112,7 @@ added right to the textual representation."
    (gravatar-make-id-from-name user)
    (if (eq opts nil)
        ""
-     (concat "_"
-	     (mapconcat (lambda (x) x)
-			opts
-			"_")))))
+     (concat "_" (mapconcat (lambda (x) x) opts "_")))))
 
 (defun gravatar-make-id-from-name (user)
   (md5
@@ -128,11 +131,20 @@ added right to the textual representation."
       (when (and field
 		 (setq field (gnus-gravatar-split-address (downcase field)))
 		 (setq file
-		       (let ((size (gravatar-make-query-size gravatar-icon-size)))
-			 (gravatar-retrieve
-			  (gravatar-make-store-filename field size)
-			  (gravatar-make-url field size))
-			 (gravatar-make-store-filename field size)))
+		       (let* ((size (gravatar-make-query-size gravatar-icon-size))
+			      (fn (gravatar-make-store-filename field size)))
+			 (if (file-exists-p fn)
+			     ;; use cache
+			     fn
+			   (progn
+			     (gravatar-retrieve
+			      fn
+			      (gravatar-make-url field size))
+			     (if (file-exists-p fn)
+				 fn
+			       (format "%s/%s"
+				       gnus-gravatar-directory
+				       gravatar-unknown-icon))))))
 		 (setq image (cons (gnus-gravatar-create-glyph file) header))
 		 (gnus-article-goto-header header))
 	(case gnus-gravatar-style
@@ -157,6 +169,15 @@ If icons are already displayed, remove them."
       (if (and wash-gravatar-p (memq 'gravatar-icon gnus-article-wash-types))
           (gnus-delete-images 'gravatar-icon)
         (gnus-gravatar-transform-field "from" 'gravatar-icon)))))
+
+(defun gravator-toggle ()
+  "Toggle `gravatar-retrieve'"
+  (interactive)
+  (setq gravatar-active-p (not gravatar-active-p))
+  (if gravatar-active-p
+      (message "gravatar-active-p on")
+    (message "gravatar-active-p off")))
+
 
 ;; test
 (defun gravatar-insert-image (user &rest opts)
