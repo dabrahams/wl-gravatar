@@ -32,8 +32,6 @@
 
 (require 'md5)
 (require 'image)
-(require 'gnus-art)
-(require 'gnus-picon)
 (require 'mail-parse)
 
 (defcustom gravatar-base-url "http://www.gravatar.com/avatar/"

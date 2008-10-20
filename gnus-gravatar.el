@@ -31,6 +31,8 @@
 ;;  http://en.gravatar.com/site/implement/url
 ;;
 
+(require 'gnus-art)
+(require 'gnus-picon)
 (require 'gravatar)
 
 (defalias 'gnus-gravatar-insert-glyph 'gnus-picon-insert-glyph)
