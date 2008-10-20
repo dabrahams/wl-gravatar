@@ -22,10 +22,11 @@
 
 ;;
 ;; Usage:
-;; gravatar interface api.
+;; (setq gravatar-directory "~/.emacs-gravatar/")
 ;;
 
 ;;
+;; gravatar interface api.
 ;; detail of gravatar API is following,
 ;;  http://en.gravatar.com/site/implement/url
 ;;

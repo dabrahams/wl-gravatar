@@ -23,7 +23,6 @@
 ;;
 ;; Usage:
 ;; (require 'gnus-gravatar)
-;; (setq gnus-gravatar-directory "~/.emacs-gravatar/")
 ;;
 
 ;;
