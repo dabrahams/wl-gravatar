@@ -52,6 +52,15 @@
 (add-to-list 'gnus-treatment-function-alist
               '(gnus-treat-gravatar-icon gnus-treat-gravatar-icon))
 
+(defvar gravatar-unregistered-icon-query-alist
+  '((identicon . "&d=identicon")
+    (monsterid . "&d=monsterid")
+    (wavatar   . "&d=wavatar")))
+
+(defcustom gnus-gravatar-unregistered-icon 'identicon
+  "Icon type of unregistered user."
+  :group 'gravatar)
+
 (defcustom gnus-gravatar-style
   (if (boundp 'gnus-picon-style) gnus-picon-style 'inline)
   "*How should gravatar icons be displayed.
@@ -104,7 +113,10 @@ added right to the textual representation."
 (defun gravatar-make-query (opts)
   (if (eq opts nil)
       ""
-    (concat "?" (mapconcat (lambda (x) x) opts "&"))))
+    (concat "?" (mapconcat (lambda (x) x) opts "&")
+	    ;; unknown user
+	    (cdr (assq gnus-gravatar-unregistered-icon
+		       gravatar-unregistered-icon-query-alist)))))
 
 (defun gravatar-make-store-filename (user &rest opts)
   (concat
