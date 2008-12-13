@@ -53,11 +53,12 @@
               '(gnus-treat-gravatar-icon gnus-treat-gravatar-icon))
 
 (defvar gravatar-unregistered-icon-query-alist
-  '((identicon . "&d=identicon")
+  '((none      . "")
+    (identicon . "&d=identicon")
     (monsterid . "&d=monsterid")
     (wavatar   . "&d=wavatar")))
 
-(defcustom gnus-gravatar-unregistered-icon 'identicon
+(defcustom gnus-gravatar-unregistered-icon 'none
   "Icon type of unregistered user."
   :group 'gravatar)
 
