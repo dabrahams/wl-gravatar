@@ -119,10 +119,18 @@ added right to the textual representation."
 	    (cdr (assq gnus-gravatar-unregistered-icon
 		       gravatar-unregistered-icon-query-alist)))))
 
+(defun gravatar-make-store-filename-from-user (user)
+  (let ((string user))
+    (while (string-match "[\\. ]" string)
+      (setq string (replace-match "_" nil nil string)))
+    string))
+
 (defun gravatar-make-store-filename (user &rest opts)
   (concat
    gnus-gravatar-directory
-   (gravatar-make-id-from-name user)
+   ;;(gravatar-make-id-from-name user)
+   (gravatar-make-store-filename-from-user
+    (gnus-gravatar-split-address user))
    (if (eq opts nil)
        ""
      (concat "_" (mapconcat (lambda (x) x) opts "_")))))
