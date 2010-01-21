@@ -22,35 +22,21 @@
 
 ;;
 ;; Usage:
-;; (require 'gravatar)
-;; (setq gnus-gravatar-directory "~/.emacs-gravatar/")
+;; (setq gravatar-directory "~/.emacs-gravatar/")
 ;;
 
 ;;
+;; gravatar interface api.
 ;; detail of gravatar API is following,
 ;;  http://en.gravatar.com/site/implement/url
 ;;
 
 (require 'md5)
 (require 'image)
-(require 'gnus-art)
-(require 'gnus-picon)
 (require 'mail-parse)
-
-(defalias 'gnus-gravatar-insert-glyph 'gnus-picon-insert-glyph)
-(defalias 'gnus-gravatar-create-glyph 'gnus-picon-create-glyph)
 
 (defvar gravatar-active-p t
   "Fetch gravatar icon from network")
-
-(defvar gnus-treat-gravatar-icon
-  (if (and (gnus-image-type-available-p 'png)
-	   (gnus-image-type-available-p 'jpeg)
-	   (gnus-image-type-available-p 'gif))
-      'head nil))
-
-(add-to-list 'gnus-treatment-function-alist
-              '(gnus-treat-gravatar-icon gnus-treat-gravatar-icon))
 
 (defvar gravatar-unregistered-icon-query-alist
   '((none      . "")
@@ -58,24 +44,15 @@
     (monsterid . "&d=monsterid")
     (wavatar   . "&d=wavatar")))
 
-(defcustom gnus-gravatar-unregistered-icon 'none
+(defcustom gravatar-unregistered-icon 'none
   "Icon type of unregistered user."
   :group 'gravatar)
-
-(defcustom gnus-gravatar-style
-  (if (boundp 'gnus-picon-style) gnus-picon-style 'inline)
-  "*How should gravatar icons be displayed.
-If `inline', the textual representation is replaced.  If `right', picons are
-added right to the textual representation."
-  :type '(choice (const inline)
-                 (const right))
-  :group 'gnus-gravatar)
 
 (defcustom gravatar-base-url "http://www.gravatar.com/avatar/"
   "URL of gravatar's www site."
   :group 'gravatar)
 
-(defcustom gnus-gravatar-directory "~/.emacs-gravatar/"
+(defcustom gravatar-directory "~/.emacs-gravatar/"
   "Placement of picture files."
   :group 'gravatar)
 
@@ -91,12 +68,12 @@ added right to the textual representation."
   "Display icon when pixmap is unrecognized"
   :group 'gravatar)
 
-(defun gnus-gravatar-split-address (address)
+(defun gravatar-split-address (address)
   (car (mail-header-parse-address address)))
 
 (defun gravatar-retrieve (path url)
   (if gravatar-active-p
-      (let ((spath (expand-file-name gnus-gravatar-directory)))
+      (let ((spath (expand-file-name gravatar-directory)))
 	(if (not (file-exists-p spath))
 	    (make-directory spath t))
 	(shell-command-to-string
@@ -116,7 +93,7 @@ added right to the textual representation."
       ""
     (concat "?" (mapconcat (lambda (x) x) opts "&")
 	    ;; unknown user
-	    (cdr (assq gnus-gravatar-unregistered-icon
+	    (cdr (assq gravatar-unregistered-icon
 		       gravatar-unregistered-icon-query-alist)))))
 
 (defun gravatar-make-store-filename-from-user (user)
@@ -127,10 +104,10 @@ added right to the textual representation."
 
 (defun gravatar-make-store-filename (user &rest opts)
   (concat
-   gnus-gravatar-directory
+   gravatar-directory
    ;;(gravatar-make-id-from-name user)
    (gravatar-make-store-filename-from-user
-    (gnus-gravatar-split-address user))
+    (gravatar-split-address user))
    (if (eq opts nil)
        ""
      (concat "_" (mapconcat (lambda (x) x) opts "_")))))
@@ -145,51 +122,6 @@ added right to the textual representation."
    (gravatar-make-id-from-name user)
    (gravatar-make-query opts)))
 
-(defun gnus-gravatar-transform-field (header category)
-  (gnus-with-article-headers
-    (let ((field (mail-fetch-field header))
-          file image len)
-      (when (and field
-		 (setq field (gnus-gravatar-split-address (downcase field)))
-		 (setq file
-		       (let* ((size (gravatar-make-query-size gravatar-icon-size))
-			      (fn (gravatar-make-store-filename field size)))
-			 (if (file-exists-p fn)
-			     ;; use cache
-			     fn
-			   (progn
-			     (gravatar-retrieve
-			      fn
-			      (gravatar-make-url field size))
-			     (if (file-exists-p fn)
-				 fn
-			       (format "%s/%s"
-				       gnus-gravatar-directory
-				       gravatar-unknown-icon))))))
-		 (setq image (cons (gnus-gravatar-create-glyph file) header))
-		 (gnus-article-goto-header header))
-	(case gnus-gravatar-style
-          (right
-           (setq len (car (image-size (car image))))
-           (when (and len (> len 0))
-             (goto-char (point-at-eol))
-             (insert (propertize
-                      " " 'display
-                      (cons 'space
-                            (list :align-to (- (window-width) 1 len))))))
-           (goto-char (point-at-eol)))
-          (inline nil))
-	(gnus-gravatar-insert-glyph image category)))))
-
-(defun gnus-treat-gravatar-icon ()
-  "Display gravatar icons in the from header.
-If icons are already displayed, remove them."
-  (interactive)
-  (let ((wash-gravatar-p buffer-read-only))
-    (gnus-with-article-headers
-      (if (and wash-gravatar-p (memq 'gravatar-icon gnus-article-wash-types))
-          (gnus-delete-images 'gravatar-icon)
-        (gnus-gravatar-transform-field "from" 'gravatar-icon)))))
 
 (defun gravator-toggle ()
   "Toggle `gravatar-retrieve'"
