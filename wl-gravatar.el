@@ -49,7 +49,7 @@
       (save-excursion
         (goto-char (point-min))
         (when (re-search-forward "^From: " nil t)
-          (insert-image-file filename)))
+          (insert-image (create-image filename))))
       )))
 
 (provide 'wl-gravatar)
