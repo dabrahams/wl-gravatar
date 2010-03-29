@@ -35,7 +35,7 @@
 
 (defvar wl-gravatar-retrieve-once nil)
 
-(defun wl-gravatar-insert ()
+(defun wl-gravatar-insert (&rest dummy)
   (let ((field (std11-fetch-field "From"))
         (size (gravatar-make-query-size gravatar-icon-size))
         filename)
