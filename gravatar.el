@@ -98,7 +98,7 @@
 
 (defun gravatar-make-store-filename-from-user (user)
   (let ((string user))
-    (while (string-match "[\\. ]" string)
+    (while (string-match "[^!#$%&()+,=@A-Z^_a-z0-9{}~-]" string)
       (setq string (replace-match "_" nil nil string)))
     string))
 
