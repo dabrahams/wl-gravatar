@@ -25,7 +25,7 @@
 ;; Usage:
 ;; (require 'wl-gravatar)
 ;; (setq wl-highlight-x-face-function 'wl-gravatar-insert)
-;; (setq gravatar-directory "~/.cache/emacs-gravatar/")
+;; (setq gnus-gravatar-directory "~/.emacs-gravatar/")
 ;; (setq gravatar-unregistered-icon 'identicon)
 ;; (setq wl-gravatar-retrieve-once t)
 
@@ -39,19 +39,33 @@
   "Display Gravatar images."
   (let ((field (std11-fetch-field "From"))
         (size (gravatar-make-query-size gravatar-icon-size))
-        filename)
+        filename
+        image)
     (when field
       (setq field (wl-address-header-extract-address field))
       (setq filename (gravatar-make-store-filename field size))
-      (if wl-gravatar-retrieve-once
-          (when (not (file-exists-p filename))
-            (gravatar-retrieve filename (gravatar-make-url field size)))
-        (gravatar-retrieve filename (gravatar-make-url field size)))
-      (save-excursion
-        (goto-char (point-min))
-        (when (re-search-forward "^From: " nil t)
-          (insert-image (create-image filename))))
-      )))
+
+      (flet ((safe-create-image()(ignore-errors (create-image filename))))
+
+        ;; If the file exists, is new enough, and can create an image, don't re-fetch
+        (unless (and wl-gravatar-retrieve-once
+                     (file-exists-p filename)
+                     (< (time-to-number-of-days
+                         (time-subtract 
+                          (current-time) (sixth (file-attributes filename))))
+                        90)
+                 (setq image (safe-create-image)))
+          (progn
+            (gravatar-retrieve filename (gravatar-make-url field size))
+            (setq image (safe-create-image))
+            ))
+
+        (when image
+          (save-excursion
+            (goto-char (point-min))
+            (when (re-search-forward "^From: " nil t)
+              (insert-image image))))
+      ))))
 
 (provide 'wl-gravatar)
 ;;; wl-gravatar.el ends here
